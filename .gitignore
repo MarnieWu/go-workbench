@@ -1,0 +1,36 @@
+# Local learning and session notes
+/GO_WORKBENCH_*.md
+/task_plan.md
+/findings.md
+/progress.md
+/HANDOFF.md
+/.codex/
+/.agents/
+/.scratch/
+/docs/learning_notes/
+
+# Local environment and secrets
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.template
+*.pem
+*.key
+
+# Editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs and temporary output
+*.log
+tmp/
+temp/
+
+# Generated frontend files
+web/node_modules/
+web/.next/
+web/*.tsbuildinfo
