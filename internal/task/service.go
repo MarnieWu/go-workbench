@@ -2,17 +2,32 @@ package task
 
 import (
 	"context"
+	"time"
 )
 
 type Status string
 
 const StatusBacklog Status = "backlog"
 
+type Priority string
+
+const (
+	PriorityNone   Priority = "none"
+	PriorityLow    Priority = "low"
+	PriorityMedium Priority = "medium"
+	PriorityHigh   Priority = "high"
+)
+
 type Task struct {
-	ID      string
-	OwnerID string
-	Title   string
-	Status  Status
+	ID        string
+	OwnerID   string
+	Title     string
+	Status    Status
+	Priority  Priority
+	Labels    []string
+	Version   int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Repository interface {
