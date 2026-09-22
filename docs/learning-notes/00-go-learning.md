@@ -92,3 +92,5 @@ cmd/api       → 一个程序入口
 cmd/worker    → 另一个程序入口
 internal/task → 两个程序复用的普通代码
 ```
+
+Gin 框架

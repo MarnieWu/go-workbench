@@ -6,8 +6,7 @@
 /HANDOFF.md
 /.codex/
 /.agents/
-/.scratch/
-/docs/learning_notes/
+/docs/learning-notes/
 
 # Local environment and secrets
 **/.env
