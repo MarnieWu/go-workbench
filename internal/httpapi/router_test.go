@@ -7,6 +7,7 @@ import (
 	"go-workbench/internal/task"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -38,9 +39,12 @@ func testOwner(ownerID string) gin.HandlerFunc {
 	}
 }
 
-func TestRouterListTasks(t *testing.T) {
+func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
+	os.Exit(m.Run())
+}
 
+func TestRouterListTasks(t *testing.T) {
 	repository := &stubTaskRepository{
 		tasks: []task.Task{{
 			ID:      "task-1",
@@ -62,8 +66,6 @@ func TestRouterListTasks(t *testing.T) {
 }
 
 func TestRouterListTasksReturnsEmptyItems(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	repository := &stubTaskRepository{tasks: nil}
 	service := task.NewService(repository)
 	router := NewRouter(service, testOwner("owner-1"))
@@ -97,8 +99,6 @@ func TestRouterListTasksReturnsEmptyItems(t *testing.T) {
 }
 
 func TestRouterListTasksErrors(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-
 	tests := []struct {
 		name            string
 		requestURL      string
