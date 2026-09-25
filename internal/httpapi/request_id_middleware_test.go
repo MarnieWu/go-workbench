@@ -20,7 +20,7 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 		router.ServeHTTP(recorder, request)
 
-		id := recorder.Header().Get("X-Request-ID")
+		id := recorder.Header().Get(requestIDHeader)
 
 		if id == "" {
 			t.Fatal("response X-Request-ID is empty")
@@ -79,7 +79,6 @@ func TestRequestIDIsConsistentAcrossErrorResponseAndLog(t *testing.T) {
 	var response struct {
 		RequestID string `json:"requestId"`
 	}
-
 	if err := json.NewDecoder(recorder.Body).Decode(&response); err != nil {
 		t.Fatal(err)
 	}
@@ -91,10 +90,15 @@ func TestRequestIDIsConsistentAcrossErrorResponseAndLog(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	headerID := recorder.Header().Get("X-Request-ID")
+	headerID := recorder.Header().Get(requestIDHeader)
+
+	if headerID == "" {
+		t.Fatal("response request ID is empty")
+	}
+
 	if headerID != response.RequestID || headerID != logEntry.RequestID {
 		t.Fatalf(
-			"request IDs differ: header=%q JSON=%q log=%q",
+			"request IDs differ: header=%q body=%q log=%q",
 			headerID,
 			response.RequestID,
 			logEntry.RequestID,
