@@ -77,6 +77,27 @@ export interface components {
         /** @description Authentication is required */
         Unauthorized: {
             headers: {
+                "X-Request-ID": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The request parameters are invalid */
+        BadRequest: {
+            headers: {
+                "X-Request-ID": components["headers"]["RequestId"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description An unexpected server error occurred */
+        InternalError: {
+            headers: {
+                "X-Request-ID": components["headers"]["RequestId"];
                 [name: string]: unknown;
             };
             content: {
@@ -86,7 +107,10 @@ export interface components {
     };
     parameters: never;
     requestBodies: never;
-    headers: never;
+    headers: {
+        /** @description Request identifier used to correlate API logs */
+        RequestId: string;
+    };
     pathItems: never;
 }
 export type $defs = Record<string, never>;
@@ -134,7 +158,9 @@ export interface operations {
                     };
                 };
             };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
         };
     };
 }

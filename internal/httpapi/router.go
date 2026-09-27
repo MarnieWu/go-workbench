@@ -22,18 +22,8 @@ func recoveryMiddleware() gin.HandlerFunc {
 }
 
 const (
-	requestIDHeader         = "X-Request-ID"
-	requestIDKey            = "requestID"
-	requestIDLoggerKey      = "request_id"
-	requestIDLoggerMessage  = "request completed"
-	codeInternalError       = "INTERNAL_ERROR"
-	messageInternalError    = "internal server error"
-	codeInvalidStatus       = "INVALID_STATUS"
-	messageInvalidStatus    = "invalid status"
-	codeUnauthorized        = "UNAUTHORIZED"
-	messageUnauthorized     = "authentication is required"
-	codeInvalidRequestID    = "INVALID_REQUEST_ID"
-	messageInvalidRequestID = "invalid request ID"
+	requestIDHeader = "X-Request-ID"
+	requestIDKey    = "requestID"
 )
 
 func validRequestID(requestID string) bool {
@@ -72,6 +62,13 @@ func requestLoggingMiddleware(logger *slog.Logger) gin.HandlerFunc {
 			requestIDLoggerMessage,
 			slog.String(requestIDLoggerKey, c.GetString(requestIDKey)),
 		)
+	}
+}
+
+func LocalOwnerMiddleware(ownerID string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set(ownerIDKey, ownerID)
+		c.Next()
 	}
 }
 

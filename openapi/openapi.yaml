@@ -38,12 +38,42 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
+  headers:
+    RequestId:
+      description: Request identifier used to correlate API logs
+      schema:
+        type: string
   responses:
     Unauthorized:
       description: Authentication is required
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: The request parameters are invalid
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: An unexpected server error occurred
+      headers:
+        X-Request-ID:
+          $ref: "#/components/headers/RequestId"
       content:
         application/json:
           schema:
@@ -113,4 +143,3 @@ components:
           type: string
         requestId:
           type: string
-

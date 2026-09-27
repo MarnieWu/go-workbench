@@ -6,6 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	requestIDLoggerKey      = "request_id"
+	requestIDLoggerMessage  = "request completed"
+	codeInternalError       = "INTERNAL_ERROR"
+	messageInternalError    = "internal server error"
+	codeInvalidStatus       = "INVALID_STATUS"
+	messageInvalidStatus    = "invalid status"
+	codeUnauthorized        = "UNAUTHORIZED"
+	messageUnauthorized     = "authentication is required"
+	codeInvalidRequestID    = "INVALID_REQUEST_ID"
+	messageInvalidRequestID = "invalid request ID"
+)
+
 type errorResponse struct {
 	Code      string `json:"code"`
 	Message   string `json:"message"`
