@@ -13,6 +13,7 @@
 **/.env.*
 !**/.env.example
 !**/.env.template
+/deploy/test.env
 *.pem
 *.key
 
