@@ -134,12 +134,12 @@ Task 需要按 Owner 关联 Project，因此除了主键，还要支持 `(owner_
 | `id` | `text` | 检查项 ID，主键 |
 | `task_id` | `text` | 所属 Task；外键指向 `tasks(id)` |
 | `content` | `text` | 步骤内容；不得为空字符串 |
-| `completed` | `boolean` | 是否完成；默认 `false` |
-| `position` | `integer` | 在 Task 内的显示顺序；`CHECK (position >= 0)` |
-| `created_at` | `timestamptz` | 创建时间 |
-| `updated_at` | `timestamptz` | 修改时间 |
+| `completed` | `boolean` | 是否完成；当前 SQL 默认 `false`，但允许显式写入 `NULL` |
+| `position` | `integer` | 在 Task 内的显示顺序；`CHECK (position >= 0)`；当前 SQL 还要求同一 Task 内唯一 |
+| `created_at` | `timestamptz` | 创建时间；当前 SQL 默认 `now()`，但允许显式写入 `NULL` |
+| `updated_at` | `timestamptz` | 修改时间；当前 SQL 默认 `now()`，但允许显式写入 `NULL` |
 
-这是 Task 的步骤，不是独立 Task；它通过 `task_id` 继承 Task 归属，不需要单独的 Project 或优先级。可按 `(task_id, position)` 查询；是否要求位置唯一属于未定的编辑行为，本版不强加唯一性。
+这是 Task 的步骤，不是独立 Task；它通过 `task_id` 继承 Task 归属，不需要单独的 Project 或优先级。当前 SQL 用 `UNIQUE (task_id, position)` 防止同一 Task 内的位置重复；排序时如何调整位置仍需在编辑行为中确定。`DEFAULT` 只在写入方省略该列时生效；若业务不允许 `completed` 或时间列为 `NULL`，仍需加 `NOT NULL`。
 
 ### 5. `captures`：一次原始输入及其处理进度
 
