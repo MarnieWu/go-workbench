@@ -1,6 +1,11 @@
 package postgres
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestMigrationEmptySchema(t *testing.T) {
 	ctx, conn, schema := newTestDatabase(t)
@@ -129,15 +134,97 @@ func TestMigrationEmptySchema(t *testing.T) {
 func TestMigrationRepeat(t *testing.T) {
 	ctx, conn, schema := newTestDatabase(t)
 	applyBusinessMigration(t, ctx, conn, schema)
-	// TODO: insert a valid Owner and Task, run Migrate again and assert applied == 0.
-	// TODO: assert history has one row and the original Task still exists.
-	t.Fatal("RED: fill repeat migration and data preservation assertions")
+
+	var ownerID, taskID string
+	oidcIssuer := "https://issuer.example.com"
+	oidcSubject := "test-subject"
+	taskTitle := "test task"
+	err := conn.QueryRow(ctx, `
+	  INSERT INTO owners (oidc_issuer, oidc_subject)
+		VALUES ($1, $2)
+		RETURNING id::text
+	`, oidcIssuer, oidcSubject).Scan(&ownerID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = conn.QueryRow(ctx, `
+	  INSERT INTO tasks (owner_id, title)
+		VALUES ($1::uuid, $2)
+		RETURNING id::text
+	`, ownerID, taskTitle).Scan(&taskID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	applied, err := Migrate(ctx, conn, "../../migrations", schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if applied != 0 {
+		t.Errorf("expected 0 migrations applied, got %d", applied)
+	}
+
+	var currOwnerID, currTaskID string
+	err = conn.QueryRow(ctx, `
+		SELECT id::text FROM owners
+		WHERE oidc_issuer = $1
+			AND oidc_subject = $2
+	`, oidcIssuer, oidcSubject).Scan(&currOwnerID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if currOwnerID != ownerID {
+		t.Errorf("expected owner ID %s, got %s", ownerID, currOwnerID)
+	}
+
+	err = conn.QueryRow(ctx, `
+		SELECT id::text FROM tasks
+		WHERE owner_id = $1
+			AND title = $2
+	`, currOwnerID, taskTitle).Scan(&currTaskID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if currTaskID != taskID {
+		t.Errorf("expected task ID %s, got %s", taskID, currTaskID)
+	}
 }
 
 func TestMigrationAtomicFailure(t *testing.T) {
-	_, _, _ = newTestDatabase(t)
-	// TODO: write a temporary .up.sql using t.TempDir and os.WriteFile.
-	// TODO: CREATE TABLE followed by invalid SQL; assert Migrate fails.
-	// TODO: assert the table and successful history record do not exist.
-	t.Fatal("RED: fill failed migration rollback assertions")
+	ctx, conn, schema := newTestDatabase(t)
+	tableNames := []string{
+		"rollback_probe",
+		"schema_migrations",
+	}
+	dir := t.TempDir()
+	sql := fmt.Sprintf("CREATE TABLE %s (id integer); SELECT 1 / 0;", tableNames[0])
+	err := os.WriteFile(
+		filepath.Join(dir, "000001_broken.up.sql"),
+		[]byte(sql),
+		0600,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Migrate(ctx, conn, dir, schema)
+	if err == nil {
+		t.Fatal("expected migration to fail after applying invalid SQL, but it succeeded")
+	}
+
+	for _, tableName := range tableNames {
+		var exists bool
+		err = conn.QueryRow(ctx, `SELECT EXISTS (
+			SELECT 1 FROM information_schema.tables
+			WHERE table_schema = $1
+				AND table_name = $2
+				AND table_type = 'BASE TABLE'
+		)`, schema, tableName).Scan(&exists)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if exists {
+			t.Errorf("expected %s.%s table to not exist after rollback", schema, tableName)
+		}
+	}
 }
