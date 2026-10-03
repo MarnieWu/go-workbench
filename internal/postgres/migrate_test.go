@@ -11,6 +11,15 @@ func TestMigrationEmptySchema(t *testing.T) {
 	ctx, conn, schema := newTestDatabase(t)
 	applyBusinessMigration(t, ctx, conn, schema)
 
+	var total, version int64
+	err := conn.QueryRow(ctx, "SELECT COUNT(*), COALESCE(min(version), 0) FROM schema_migrations").Scan(&total, &version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 || version != 1 {
+		t.Fatalf("migration history: got count=%d, version=%d; want count=1, version=1", total, version)
+	}
+
 	tableNames := []string{
 		"owners",
 		"projects",
@@ -89,7 +98,7 @@ func TestMigrationEmptySchema(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !matches {
-			t.Errorf("%s.%s is missing or has the wrong type/nullability", c.table, c.name)
+			t.Fatalf("%s.%s is missing or has the wrong type/nullability", c.table, c.name)
 		}
 	}
 
@@ -126,7 +135,7 @@ func TestMigrationEmptySchema(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !exists {
-			t.Errorf("%s.%s is missing constraint %s", schema, constraint.table, constraint.name)
+			t.Fatalf("%s.%s is missing constraint %s", schema, constraint.table, constraint.name)
 		}
 	}
 }
@@ -162,7 +171,7 @@ func TestMigrationRepeat(t *testing.T) {
 		t.Fatal(err)
 	}
 	if applied != 0 {
-		t.Errorf("expected 0 migrations applied, got %d", applied)
+		t.Fatalf("expected 0 migrations applied, got %d", applied)
 	}
 
 	var currOwnerID, currTaskID string
@@ -175,7 +184,7 @@ func TestMigrationRepeat(t *testing.T) {
 		t.Fatal(err)
 	}
 	if currOwnerID != ownerID {
-		t.Errorf("expected owner ID %s, got %s", ownerID, currOwnerID)
+		t.Fatalf("expected owner ID %s, got %s", ownerID, currOwnerID)
 	}
 
 	err = conn.QueryRow(ctx, `
@@ -187,7 +196,7 @@ func TestMigrationRepeat(t *testing.T) {
 		t.Fatal(err)
 	}
 	if currTaskID != taskID {
-		t.Errorf("expected task ID %s, got %s", taskID, currTaskID)
+		t.Fatalf("expected task ID %s, got %s", taskID, currTaskID)
 	}
 }
 
@@ -224,7 +233,7 @@ func TestMigrationAtomicFailure(t *testing.T) {
 			t.Fatal(err)
 		}
 		if exists {
-			t.Errorf("expected %s.%s table to not exist after rollback", schema, tableName)
+			t.Fatalf("expected %s.%s table to not exist after rollback", schema, tableName)
 		}
 	}
 }
