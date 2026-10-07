@@ -26,13 +26,12 @@ func TestSchemaTasks(t *testing.T) {
 	})
 
 	t.Run("MissingOwner", func(t *testing.T) {
-		// TODO: otherwise valid Task with nonexistent owner; assert 23503 and no row.
-		_, err := conn.Exec(ctx, "INSERT INTO tasks (owner_id, title, status) VALUES ($1::uuid, $2, $3)", "00000000-0000-0000-0000-000000000000", "task with missing owner", "pending")
-		assertPgError(t, err, "23503", "fk_task_owner_id_project")
+		missingOwnerID := "00000000-0000-4000-8000-000000000001"
+		_, err := conn.Exec(ctx, "INSERT INTO tasks (owner_id, title, status) VALUES ($1::uuid, $2, $3)", missingOwnerID, "task with missing owner", "backlog")
+		assertPgError(t, err, "23503", "tasks_owner_id_fkey")
 	})
 
 	t.Run("CrossOwnerProject", func(t *testing.T) {
-		// TODO: Owner A Task referencing Owner B Project; assert 23503 and no Task.
 		var ownerIdA, ownerIdB string
 		err := conn.QueryRow(ctx, `
 			INSERT INTO owners (oidc_issuer, oidc_subject)
@@ -59,7 +58,7 @@ func TestSchemaTasks(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = conn.Exec(ctx, "INSERT INTO tasks (owner_id, project_id, title, status) VALUES ($1::uuid, $2::uuid, $3, $4)", ownerIdA, projectIdB, "task with cross-owner project", "pending")
+		_, err = conn.Exec(ctx, "INSERT INTO tasks (owner_id, project_id, title, status) VALUES ($1::uuid, $2::uuid, $3, $4)", ownerIdA, projectIdB, "task with cross-owner project", "backlog")
 		assertPgError(t, err, "23503", "fk_task_owner_id_project")
 	})
 }
@@ -165,7 +164,64 @@ func TestSchemaTaskEvidenceLinks(t *testing.T) {
 	applyBusinessMigration(t, ctx, conn, schema)
 
 	t.Run("DuplicateEvidenceLink", func(t *testing.T) {
-		// TODO: valid Task and Evidence; link twice; assert 23505 and one link.
-		t.Fatal("RED: fill duplicate evidence link assertions")
+		var ownerID, taskId, captureID, evidenceID string
+		err := conn.QueryRow(ctx, `
+			INSERT INTO owners (oidc_issuer, oidc_subject)
+			VALUES ($1, $2)
+			RETURNING id::text
+		`, "https://issuer.example.com", "test-subject").Scan(&ownerID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = conn.QueryRow(ctx, `
+			INSERT INTO tasks (owner_id, title)
+			VALUES ($1::uuid, $2)
+			RETURNING id::text
+		`, ownerID, "test task a").Scan(&taskId)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = conn.QueryRow(ctx, `
+			INSERT INTO captures (owner_id, idempotency_key, input_hash, input_text, source_type)
+			VALUES ($1::uuid, $2, $3, $4, $5)
+			RETURNING id::text
+		`, ownerID, "valid", strings.Repeat("a", 64), "input text", "test-source").Scan(&captureID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = conn.QueryRow(ctx, `
+			INSERT INTO source_evidence (owner_id, capture_id, source_type)
+			VALUES ($1::uuid, $2::uuid, $3)
+			RETURNING id::text
+		`, ownerID, captureID, "test evidence source type").Scan(&evidenceID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = conn.Exec(ctx, `
+			INSERT INTO task_evidence_links (owner_id, task_id, source_evidence_id)
+			VALUES ($1::uuid, $2::uuid, $3::uuid)
+		`, ownerID, taskId, evidenceID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = conn.Exec(ctx, `
+			INSERT INTO task_evidence_links (owner_id, task_id, source_evidence_id)
+			VALUES ($1::uuid, $2::uuid, $3::uuid)
+		`, ownerID, taskId, evidenceID)
+		assertPgError(t, err, "23505", "uk_task_evidence_link_task_id_source_evidence_id")
+
+		var count int
+		err = conn.QueryRow(ctx, "SELECT COUNT(*) FROM task_evidence_links WHERE owner_id = $1::uuid", ownerID).Scan(&count)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if count != 1 {
+			t.Fatalf("task_evidence_links = %d, want 1", count)
+		}
 	})
 }
