@@ -106,9 +106,9 @@ func TestMigrationEmptySchema(t *testing.T) {
 		table string
 		name  string
 	}{
-		{"owners", "uk_owner_oidc_issuer_oidc_subject_key"},
+		{"owners", "uk_owner_oidc_issuer_oidc_subject"},
 		{"projects", "uk_project_owner_id_id"},
-		{"tasks", "fk_task_project"},
+		{"tasks", "fk_task_owner_id_project"},
 		{"captures", "uk_capture_owner_id_idempotency_key"},
 		{"captures", "chk_capture_input_hash"},
 		{"check_items", "uk_check_item_task_id_position"},

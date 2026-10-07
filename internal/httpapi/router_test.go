@@ -19,11 +19,17 @@ type stubTaskRepository struct {
 	panicOnList bool
 	callCount   int
 	gotOwnerID  string
+	gotFilter task.ListTasksFilter
 }
 
-func (r *stubTaskRepository) List(_ context.Context, ownerID string) ([]task.Task, error) {
+func (r *stubTaskRepository) List(
+	_ context.Context,
+	ownerID string,
+	filter task.ListTasksFilter,
+) ([]task.Task, error) {
 	r.callCount++
 	r.gotOwnerID = ownerID
+	r.gotFilter = filter
 
 	if r.panicOnList {
 		panic("repository panic")
@@ -214,5 +220,39 @@ func TestRouterListTasksErrors(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestRouterListTasksPassesStatusFilter(t *testing.T) {
+	repository := &stubTaskRepository{
+		tasks: []task.Task{{
+			ID:      "task-1",
+			OwnerID: "owner-1",
+			Title:   "Learn Go service boundaries",
+			Status:  task.StatusBacklog,
+		}},
+	}
+	service := task.NewService(repository)
+	router := NewRouter(service, testOwner("owner-1"))
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/v1/tasks?status=backlog", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d; body = %s", recorder.Code, http.StatusOK, recorder.Body.String())
+	}
+	if repository.callCount != 1 {
+		t.Fatalf("repository calls = %d, want 1", repository.callCount)
+	}
+	if repository.gotOwnerID != "owner-1" {
+		t.Fatalf("repository ownerID = %q, want %q", repository.gotOwnerID, "owner-1")
+	}
+	if repository.gotFilter.Status == nil {
+		t.Fatal("repository status filter = nil, want backlog")
+	}
+	if *repository.gotFilter.Status != task.StatusBacklog {
+		t.Fatalf("repository status filter = %q, want %q", *repository.gotFilter.Status, task.StatusBacklog)
 	}
 }

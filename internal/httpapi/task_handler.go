@@ -41,9 +41,14 @@ func listTasks(service *task.Service) gin.HandlerFunc {
 		}
 
 		status := c.Query(statusQueryKey)
+		var filter task.ListTasksFilter
+
 		switch status {
-		case "", "backlog", "in_progress", "blocked", "done":
-			// valid status, do nothing
+		case "":
+			// no filter
+		case "backlog", "in_progress", "blocked", "done":
+			taskStatus := task.Status(status)
+			filter.Status = &taskStatus
 		default:
 			writeError(
 				c,
@@ -54,7 +59,7 @@ func listTasks(service *task.Service) gin.HandlerFunc {
 			return
 		}
 
-		tasks, err := service.List(c.Request.Context(), ownerID)
+		tasks, err := service.List(c.Request.Context(), ownerID, filter)
 
 		if err != nil {
 			writeInternalError(c)

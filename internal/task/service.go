@@ -7,7 +7,12 @@ import (
 
 type Status string
 
-const StatusBacklog Status = "backlog"
+const (
+	StatusBacklog Status = "backlog"
+	StatusInProgress Status = "in_progress"
+	StatusBlocked Status = "blocked"
+	StatusDone Status = "done"
+)
 
 type Priority string
 
@@ -30,8 +35,12 @@ type Task struct {
 	UpdatedAt time.Time
 }
 
+type ListTasksFilter struct {
+	Status *Status
+}
+
 type Repository interface {
-	List(ctx context.Context, ownerID string) ([]Task, error)
+	List(ctx context.Context, ownerID string, filter ListTasksFilter) ([]Task, error)
 }
 
 type Service struct {
@@ -42,6 +51,6 @@ func NewService(repository Repository) *Service {
 	return &Service{repository: repository}
 }
 
-func (s *Service) List(ctx context.Context, ownerId string) ([]Task, error) {
-	return s.repository.List(ctx, ownerId)
+func (s *Service) List(ctx context.Context, ownerId string, filter ListTasksFilter) ([]Task, error) {
+	return s.repository.List(ctx, ownerId, filter)
 }

@@ -4,12 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"go-workbench/internal/postgres"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"go-workbench/internal/postgres"
 )
 
 func main() {
