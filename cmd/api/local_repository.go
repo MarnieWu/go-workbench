@@ -17,16 +17,21 @@ type LocalRepository struct {
 	fixture string
 }
 
-const localOwnerId = "owner-local"
+const localOwnerId = "00000000-0000-0000-0000-0000000000a1"
 
 func (r LocalRepository) List(
 	ctx context.Context,
 	ownerID string,
+	filter task.ListTasksFilter,
 ) ([]task.Task, error) {
 
 	if ownerID == localOwnerId {
 		switch r.fixture {
 		case FixtureSuccess:
+			if filter.Status != nil && task.StatusBacklog != *filter.Status {
+				return []task.Task{}, nil
+			}
+
 			return []task.Task{{
 				ID:       "task-1",
 				OwnerID:  ownerID,

@@ -15,7 +15,13 @@ type State =
 
 async function requestTasks(): Promise<State> {
   try {
-    const { data, error } = await api.GET("/v1/tasks");
+    const { data, error } = await api.GET("/v1/tasks", {
+      params: {
+        query: {
+          status: "backlog",
+        },
+      },
+    });
 
     console.log({ data, error });
 

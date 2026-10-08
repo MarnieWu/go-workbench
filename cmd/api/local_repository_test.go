@@ -3,16 +3,21 @@ package main
 import (
 	"context"
 	"testing"
+	"go-workbench/internal/task"
 )
 
 func TestLocalRepositoryList(t *testing.T) {
 	fixtures := []string{"success", "empty", "error"}
+	status := task.StatusBacklog
+	filter := task.ListTasksFilter {
+		Status: &status,
+	}
 
 	for _, fixture := range fixtures {
 		repository := LocalRepository{fixture: fixture}
 
 		t.Run(fixture, func(t *testing.T) {
-			tasks, err := repository.List(context.Background(), localOwnerId)
+			tasks, err := repository.List(context.Background(), localOwnerId, filter)
 
 			if fixture == "success" {
 				if len(tasks) == 0 {
