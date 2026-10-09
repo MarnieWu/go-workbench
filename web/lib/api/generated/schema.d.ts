@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/captures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -46,6 +62,25 @@ export interface components {
         };
         /** @enum {string} */
         TaskStatus: "backlog" | "in_progress" | "blocked" | "done";
+        /** @enum {string} */
+        CaptureStatus: "queued" | "processing" | "processed" | "failed";
+        CreateCaptureRequest: {
+            idempotencyKey: string;
+            inputText: string;
+            sourceType: string;
+            externalRef?: string | null;
+            sourceUrl?: string | null;
+            excerpt?: string | null;
+            consentScope?: string | null;
+        };
+        Capture: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["CaptureStatus"];
+            requestId: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
         Task: {
             /** Format: uuid */
             id: string;
@@ -160,6 +195,44 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    createCapture: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCaptureRequest"];
+            };
+        };
+        responses: {
+            /** @description Capture was created or an identical idempotent request was reused */
+            201: {
+                headers: {
+                    "X-Request-ID"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capture"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            /** @description The idempotency key was already used for different input */
+            409: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             500: components["responses"]["InternalError"];
         };
     };

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"go-workbench/internal/capture"
 	"go-workbench/internal/httpapi"
 	"go-workbench/internal/postgres"
 	"go-workbench/internal/task"
@@ -34,9 +35,15 @@ func main() {
 		}
 	}()
 
-	repository := postgres.NewTaskRepository(conn)
-	service := task.NewService(repository)
-	router := httpapi.NewRouter(service, httpapi.LocalOwnerMiddleware(localOwnerId))
+	taskRepository := postgres.NewTaskRepository(conn)
+	taskService := task.NewService(taskRepository)
+	captureRepository := postgres.NewCaptureRepository(conn)
+	captureService := capture.NewService(captureRepository)
+
+	router := httpapi.NewRouter(httpapi.RouterConfig{
+		TaskService:    taskService,
+		CaptureService: captureService,
+	}, httpapi.LocalOwnerMiddleware(localOwnerId))
 
 	if err := router.Run(":8080"); err != nil {
 		log.Fatal("start server failed")

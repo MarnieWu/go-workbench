@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"crypto/rand"
+	"go-workbench/internal/capture"
 	"go-workbench/internal/task"
 	"log/slog"
 	"os"
@@ -72,7 +73,15 @@ func LocalOwnerMiddleware(ownerID string) gin.HandlerFunc {
 	}
 }
 
-func NewRouter(service *task.Service, middlewares ...gin.HandlerFunc) *gin.Engine {
+type RouterConfig struct {
+	TaskService    *task.Service
+	CaptureService *capture.Service
+}
+
+func NewRouter(
+	config RouterConfig,
+	middlewares ...gin.HandlerFunc,
+) *gin.Engine {
 	router := gin.New()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
@@ -80,6 +89,8 @@ func NewRouter(service *task.Service, middlewares ...gin.HandlerFunc) *gin.Engin
 	router.Use(requestLoggingMiddleware(logger))
 	router.Use(recoveryMiddleware())
 	router.Use(middlewares...)
-	router.GET("/v1/tasks", listTasks(service))
+	router.GET("/v1/tasks", listTasks(config.TaskService))
+	router.POST("/v1/captures", createCapture(config.CaptureService))
+
 	return router
 }

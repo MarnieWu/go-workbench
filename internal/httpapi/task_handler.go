@@ -19,6 +19,11 @@ type taskResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+const (
+	codeInvalidStatus    = "INVALID_STATUS"
+	messageInvalidStatus = "invalid status"
+)
+
 type listTasksResponse struct {
 	Items []taskResponse `json:"items"`
 }

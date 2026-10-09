@@ -258,16 +258,16 @@ make test
 
 ```bash
 make test-db-up
-make test-migrate
-make test-seed
+make run-migrate-test-db
+make run-seed-test-db
 ```
 
-这些 `test-*` 命令读取本地 `deploy/test.env`，使用 `TEST_DATABASE_URL`。`make test-seed` 会把 `TEST_DATABASE_URL` 注入给 `cmd/seed` 的 `DATABASE_URL`。`cmd/seed` 会插入 Owner A、Owner B、A 的 backlog/done Task、B 的 backlog Task。API 本地 owner 使用 Owner A 的固定 UUID，所以浏览器页面应该只看到 Owner A 的 Task。
+这些 `run-*-test-db` 命令使用调用者显式导出的 `TEST_DATABASE_URL`。`make run-seed-test-db` 会把 `TEST_DATABASE_URL` 注入给 `cmd/seed` 的 `DATABASE_URL`。`cmd/seed` 会插入 Owner A、Owner B、A 的 backlog/done Task、B 的 backlog Task。API 本地 owner 使用 Owner A 的固定 UUID，所以浏览器页面应该只看到 Owner A 的 Task。
 
 启动 API。确认 API 使用 PostgreSQL repository。启动 Web。打开 Task 页面，查看浏览器 Network 中 `/v1/tasks` 的响应。
 
 ```bash
-make test-api
+make run-api-test-db
 ```
 
 当前 Web 页面只展示 Task 列表，不提供 status filter 控件。08 的浏览器验证只确认页面能显示 PostgreSQL 数据和 owner 隔离。`status` filter 通过 API 请求验证，例如直接请求 `/v1/tasks?status=backlog`，或在浏览器 Network/API 客户端中确认响应只包含 backlog Task。前端筛选控件放到后续 UI 切片。

@@ -12,7 +12,7 @@ import (
 
 func TestRequestIDMiddleware(t *testing.T) {
 	service := task.NewService(&stubTaskRepository{})
-	router := NewRouter(service, testOwner("owner-1"))
+	router := NewRouter(RouterConfig{TaskService: service}, testOwner("owner-1"))
 
 	requestID := func() string {
 		recorder := httptest.NewRecorder()
@@ -69,7 +69,7 @@ func TestRequestIDIsConsistentAcrossErrorResponseAndLog(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
 
 	service := task.NewService(&stubTaskRepository{})
-	router := NewRouter(service, requestLoggingMiddleware(logger))
+	router := NewRouter(RouterConfig{TaskService: service}, requestLoggingMiddleware(logger))
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/tasks", nil)

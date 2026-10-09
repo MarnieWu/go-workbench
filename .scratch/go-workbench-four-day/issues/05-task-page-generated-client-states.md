@@ -147,7 +147,7 @@ Browser: http://localhost:3000/api/v1/tasks
    - 通过：返回 `200`、`Content-Type: application/json`、非空 `items` 以及非空 `X-Request-ID`。
 9. 在终端 C 启动前端，保持终端 A 的 Gin 进程继续运行，再验证 rewrite：
    ```bash
-   npm --prefix web run dev
+   make run-frontend
    ```
    - 在浏览器打开 `http://localhost:3000`。Network 中的请求 URL 必须是 `http://localhost:3000/api/v1/tasks`，不得直接请求 `:8080`。
    - 通过：页面获得 `200` 和非空 Task 列表；浏览器控制台中没有 CORS 或 `ERR_CONNECTION_REFUSED` 错误。

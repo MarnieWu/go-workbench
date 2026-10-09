@@ -44,6 +44,41 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+  /v1/captures:
+    post:
+      operationId: createCapture
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCaptureRequest"
+      responses:
+        "201":
+          description: Capture was created or an identical idempotent request was reused
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Capture"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: The idempotency key was already used for different input
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
   headers:
     RequestId:
@@ -89,6 +124,51 @@ components:
     TaskStatus:
       type: string
       enum: [backlog, in_progress, blocked, done]
+    CaptureStatus:
+      type: string
+      enum: [queued, processing, processed, failed]
+    CreateCaptureRequest:
+      type: object
+      required: [idempotencyKey, inputText, sourceType]
+      properties:
+        idempotencyKey:
+          type: string
+          minLength: 1
+          maxLength: 120
+        inputText:
+          type: string
+          minLength: 1
+          maxLength: 250
+        sourceType:
+          type: string
+          minLength: 1
+          maxLength: 40
+        externalRef:
+          type: [string, "null"]
+          maxLength: 200
+        sourceUrl:
+          type: [string, "null"]
+          maxLength: 500
+        excerpt:
+          type: [string, "null"]
+          maxLength: 250
+        consentScope:
+          type: [string, "null"]
+          maxLength: 80
+    Capture:
+      type: object
+      required: [id, status, requestId, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CaptureStatus"
+        requestId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
     Task:
       type: object
       required: [id, title, status, priority, labels, version, createdAt, updatedAt]

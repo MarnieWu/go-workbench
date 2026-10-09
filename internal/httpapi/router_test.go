@@ -19,7 +19,7 @@ type stubTaskRepository struct {
 	panicOnList bool
 	callCount   int
 	gotOwnerID  string
-	gotFilter task.ListTasksFilter
+	gotFilter   task.ListTasksFilter
 }
 
 func (r *stubTaskRepository) List(
@@ -60,7 +60,7 @@ func TestRouterListTasks(t *testing.T) {
 		}},
 	}
 	service := task.NewService(repository)
-	router := NewRouter(service, testOwner("owner-1"))
+	router := NewRouter(RouterConfig{TaskService: service}, testOwner("owner-1"))
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/tasks", nil)
 
@@ -74,7 +74,7 @@ func TestRouterListTasks(t *testing.T) {
 func TestRouterListTasksReturnsEmptyItems(t *testing.T) {
 	repository := &stubTaskRepository{tasks: nil}
 	service := task.NewService(repository)
-	router := NewRouter(service, testOwner("owner-1"))
+	router := NewRouter(RouterConfig{TaskService: service}, testOwner("owner-1"))
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/tasks", nil)
 
@@ -168,7 +168,7 @@ func TestRouterListTasksErrors(t *testing.T) {
 				middlewares = append(middlewares, testOwner(test.ownerID))
 			}
 
-			router := NewRouter(service, middlewares...)
+			router := NewRouter(RouterConfig{TaskService: service}, middlewares...)
 			recorder := httptest.NewRecorder()
 			request := httptest.NewRequest(http.MethodGet, test.requestURL, nil)
 
@@ -233,7 +233,7 @@ func TestRouterListTasksPassesStatusFilter(t *testing.T) {
 		}},
 	}
 	service := task.NewService(repository)
-	router := NewRouter(service, testOwner("owner-1"))
+	router := NewRouter(RouterConfig{TaskService: service}, testOwner("owner-1"))
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/tasks?status=backlog", nil)

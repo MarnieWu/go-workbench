@@ -7,11 +7,11 @@ import (
 )
 
 type stubRepository struct {
-	tasks []Task
-	err   error
+	tasks   []Task
+	err     error
 	ownerID string
-	filter ListTasksFilter
-	callCount int
+	filter  ListTasksFilter
+	calls   int
 }
 
 func (r *stubRepository) List(
@@ -19,7 +19,7 @@ func (r *stubRepository) List(
 	ownerID string,
 	filter ListTasksFilter,
 ) ([]Task, error) {
-	r.callCount++
+	r.calls++
 	r.ownerID = ownerID
 	r.filter = filter
 
@@ -39,7 +39,7 @@ func TestServiceListReturnsOwnerTasks(t *testing.T) {
 	repository := &stubRepository{tasks: want}
 	service := NewService(repository)
 
-	got, err := service.List(context.Background(), "owner-1", ListTasksFilter {
+	got, err := service.List(context.Background(), "owner-1", ListTasksFilter{
 		Status: &status,
 	})
 	if err != nil {
@@ -48,8 +48,8 @@ func TestServiceListReturnsOwnerTasks(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("List() = %#v, want %#v", got, want)
 	}
-	if repository.callCount != 1 {
-		t.Fatalf("repository calls = %d, want 1", repository.callCount)
+	if repository.calls != 1 {
+		t.Fatalf("repository calls = %d, want 1", repository.calls)
 	}
 	if repository.ownerID != "owner-1" {
 		t.Fatalf("repository ownerID = %q, want %q", repository.ownerID, "owner-1")
