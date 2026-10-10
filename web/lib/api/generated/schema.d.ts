@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/tasks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["updateTask"];
+        trace?: never;
+    };
     "/v1/captures": {
         parameters: {
             query?: never;
@@ -46,6 +62,54 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["createCapture"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listInbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/candidates/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/candidates/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["acceptCandidate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -64,6 +128,8 @@ export interface components {
         TaskStatus: "backlog" | "in_progress" | "blocked" | "done";
         /** @enum {string} */
         CaptureStatus: "queued" | "processing" | "processed" | "failed";
+        /** @enum {string} */
+        CandidateStatus: "pending_review" | "accepted" | "rejected";
         CreateCaptureRequest: {
             idempotencyKey: string;
             inputText: string;
@@ -80,6 +146,42 @@ export interface components {
             requestId: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        Candidate: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            captureId: string;
+            proposedTitle: string;
+            proposedDescription?: string | null;
+            /** Format: uuid */
+            proposedProjectId?: string | null;
+            labels: string[];
+            status: components["schemas"]["CandidateStatus"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        CandidateMutationResult: {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["CandidateStatus"];
+        };
+        AcceptCandidateRequest: {
+            title: string;
+            description?: string | null;
+            /** Format: uuid */
+            projectId?: string | null;
+            labels: string[];
+        };
+        AcceptCandidateResult: {
+            /** Format: uuid */
+            candidateId: string;
+            /** Format: uuid */
+            taskId: string;
+            /** @constant */
+            status: "accepted";
         };
         Task: {
             /** Format: uuid */
@@ -101,6 +203,19 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        UpdateTaskRequest: {
+            version: number;
+            /** Format: uuid */
+            projectId?: string | null;
+            title: string;
+            description: string;
+            status: components["schemas"]["TaskStatus"];
+            /** @enum {string} */
+            priority: "none" | "low" | "medium" | "high";
+            labels: string[];
+            /** Format: date-time */
+            dueAt?: string | null;
         };
         ErrorResponse: {
             code: string;
@@ -129,6 +244,24 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description The owner-scoped resource was not found */
+        NotFound: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description The resource state changed and the command was not applied */
+        Conflict: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
         /** @description An unexpected server error occurred */
         InternalError: {
             headers: {
@@ -140,7 +273,9 @@ export interface components {
             };
         };
     };
-    parameters: never;
+    parameters: {
+        CandidateId: string;
+    };
     requestBodies: never;
     headers: {
         /** @description Request identifier used to correlate API logs */
@@ -198,6 +333,37 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    updateTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated Task with incremented version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     createCapture: {
         parameters: {
             query?: never;
@@ -233,6 +399,88 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listInbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owner-scoped pending Candidate list */
+            200: {
+                headers: {
+                    "X-Request-ID": components["headers"]["RequestId"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Candidate"][];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    rejectCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["CandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Candidate was rejected */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateMutationResult"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    acceptCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["parameters"]["CandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptCandidateRequest"];
+            };
+        };
+        responses: {
+            /** @description Candidate was accepted and a Task was created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AcceptCandidateResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             500: components["responses"]["InternalError"];
         };
     };

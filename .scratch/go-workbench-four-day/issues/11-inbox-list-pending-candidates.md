@@ -4,7 +4,9 @@
 
 **Blocked by:** 09 — 幂等创建 Capture 的最小 API 切片。
 
-**Status:** ready-for-agent
+**Status:** agent-complete-db-verification-blocked
+
+**Agent progress (2026-10-10):** Candidate list service、owner/status scoped PostgreSQL query、Gin route、OpenAPI generated client 和 Inbox 的 skeleton/loading/empty/error/success 已实现。非数据库测试、race、lint 和 typecheck 通过；repository 行为因本轮未读取 `TEST_DATABASE_URL` 而未运行。
 
 **Collaboration:** 我主写。你审查 owner scope、状态过滤和领域词是否准确；我实现查询、OpenAPI、页面状态和回归测试。
 

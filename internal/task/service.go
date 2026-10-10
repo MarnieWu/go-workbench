@@ -2,16 +2,22 @@ package task
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
 type Status string
 
 const (
-	StatusBacklog Status = "backlog"
+	StatusBacklog    Status = "backlog"
 	StatusInProgress Status = "in_progress"
-	StatusBlocked Status = "blocked"
-	StatusDone Status = "done"
+	StatusBlocked    Status = "blocked"
+	StatusDone       Status = "done"
+)
+
+var (
+	ErrNotFound        = errors.New("task not found")
+	ErrVersionConflict = errors.New("task version conflict")
 )
 
 type Priority string
@@ -24,15 +30,33 @@ const (
 )
 
 type Task struct {
-	ID        string
-	OwnerID   string
-	Title     string
-	Status    Status
-	Priority  Priority
-	Labels    []string
-	Version   int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          string
+	OwnerID     string
+	ProjectID   *string
+	Title       string
+	Description string
+	Status      Status
+	Priority    Priority
+	Labels      []string
+	DueAt       *time.Time
+	ArchivedAt  *time.Time
+	Version     int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type UpdateInput struct {
+	OwnerID     string
+	TaskID      string
+	Version     int64
+	ProjectID   *string
+	Title       string
+	Description string
+	Status      Status
+	Priority    Priority
+	Labels      []string
+	DueAt       *time.Time
+	RequestID   string
 }
 
 type ListTasksFilter struct {

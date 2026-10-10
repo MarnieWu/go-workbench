@@ -69,10 +69,13 @@ export function CaptureForm() {
           }}
           rows={4}
           maxLength={250}
+		  aria-describedby="capture-limit"
           className="mt-2 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus-visible:ring-2 focus-visible:ring-pink-300"
           placeholder="把当前可见内容中的任务加入工作台"
         />
-        <p className="mt-2 text-xs text-zinc-500">{inputText.length}/250</p>
+		<p id="capture-limit" className="mt-2 text-xs text-zinc-500">
+		  {inputText.length}/250，最多 250 个字符
+		</p>
       </div>
 
       <button

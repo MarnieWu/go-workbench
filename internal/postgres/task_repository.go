@@ -21,7 +21,8 @@ func (r *TaskRepository) List(
 	filter task.ListTasksFilter,
 ) ([]task.Task, error) {
 	query := `
-		SELECT id, owner_id, title, status, priority, labels, version, created_at, updated_at
+		SELECT id, owner_id, project_id::text, title, COALESCE(description, ''), status, priority, labels,
+			due_at, archived_at, version, created_at, updated_at
 		FROM tasks
 		WHERE owner_id = $1
 		ORDER BY created_at DESC
@@ -30,7 +31,8 @@ func (r *TaskRepository) List(
 
 	if filter.Status != nil {
 		query = `
-			SELECT id, owner_id, title, status, priority, labels, version, created_at, updated_at
+			SELECT id, owner_id, project_id::text, title, COALESCE(description, ''), status, priority, labels,
+				due_at, archived_at, version, created_at, updated_at
 			FROM tasks
 			WHERE owner_id = $1 AND status = $2
 			ORDER BY created_at DESC
@@ -51,10 +53,14 @@ func (r *TaskRepository) List(
 		if err := rows.Scan(
 			&t.ID,
 			&t.OwnerID,
+			&t.ProjectID,
 			&t.Title,
+			&t.Description,
 			&t.Status,
 			&t.Priority,
 			&t.Labels,
+			&t.DueAt,
+			&t.ArchivedAt,
 			&t.Version,
 			&t.CreatedAt,
 			&t.UpdatedAt,

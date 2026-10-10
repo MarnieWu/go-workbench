@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"crypto/rand"
+	"go-workbench/internal/candidate"
 	"go-workbench/internal/capture"
 	"go-workbench/internal/task"
 	"log/slog"
@@ -9,6 +11,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+type CandidateRejecter interface {
+	Reject(ctx context.Context, input candidate.RejectInput) (candidate.Candidate, error)
+}
+
+type CandidateAccepter interface {
+	Accept(ctx context.Context, input candidate.AcceptInput) (candidate.AcceptResult, error)
+}
+
+type TaskUpdater interface {
+	Update(ctx context.Context, input task.UpdateInput) (task.Task, error)
+}
 
 func recoveryMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -74,8 +88,13 @@ func LocalOwnerMiddleware(ownerID string) gin.HandlerFunc {
 }
 
 type RouterConfig struct {
-	TaskService    *task.Service
-	CaptureService *capture.Service
+	TaskService       *task.Service
+	CaptureService    *capture.Service
+	CandidateService  *candidate.Service
+	CandidateRejecter CandidateRejecter
+	CandidateAccepter CandidateAccepter
+	TaskUpdater       TaskUpdater
+	Logger            *slog.Logger
 }
 
 func NewRouter(
@@ -83,7 +102,10 @@ func NewRouter(
 	middlewares ...gin.HandlerFunc,
 ) *gin.Engine {
 	router := gin.New()
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger := config.Logger
+	if logger == nil {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	}
 
 	router.Use(requestIDMiddleware())
 	router.Use(requestLoggingMiddleware(logger))
@@ -91,6 +113,10 @@ func NewRouter(
 	router.Use(middlewares...)
 	router.GET("/v1/tasks", listTasks(config.TaskService))
 	router.POST("/v1/captures", createCapture(config.CaptureService))
+	router.GET("/v1/inbox", listInbox(config.CandidateService))
+	router.POST("/v1/candidates/:id/reject", rejectCandidate(config.CandidateRejecter))
+	router.POST("/v1/candidates/:id/accept", acceptCandidate(config.CandidateAccepter))
+	router.PATCH("/v1/tasks/:id", updateTask(config.TaskUpdater))
 
 	return router
 }

@@ -53,7 +53,6 @@ func TestRequestIDMiddleware(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
 			testID := requestID()
 
 			if testID == test.requestID {
@@ -69,7 +68,7 @@ func TestRequestIDIsConsistentAcrossErrorResponseAndLog(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))
 
 	service := task.NewService(&stubTaskRepository{})
-	router := NewRouter(RouterConfig{TaskService: service}, requestLoggingMiddleware(logger))
+	router := NewRouter(RouterConfig{TaskService: service, Logger: logger})
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/v1/tasks", nil)

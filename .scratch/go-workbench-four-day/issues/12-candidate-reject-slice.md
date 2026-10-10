@@ -4,7 +4,9 @@
 
 **Blocked by:** 11 — 展示 pending Candidate 的 Inbox。
 
-**Status:** ready-for-agent
+**Status:** waiting-for-user
+
+**Agent progress (2026-10-10):** reject HTTP/OpenAPI 接线、稳定 404/409/500 映射、Web mutation 禁用和失败保留已完成。Candidate 状态更新、Audit Event 和事务仍由用户实现，运行入口因此尚未注入 reject service。
 
 **Collaboration:** 共同完成。你主写 Candidate 状态规则和 Audit Event 写入判断；我主写 HTTP、UI mutation、错误状态和辅助测试。
 

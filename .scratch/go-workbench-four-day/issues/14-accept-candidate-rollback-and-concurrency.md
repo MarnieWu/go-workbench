@@ -4,7 +4,9 @@
 
 **Blocked by:** 13 — 接受 Candidate 的成功事务。
 
-**Status:** ready-for-agent
+**Status:** waiting-for-user
+
+**Agent progress (2026-10-10):** `CANDIDATE_STATE_CONFLICT` 安全映射和 Web 冲突输入保留已完成。失败注入、rollback、唯一约束检查和无 sleep 并发测试等待用户的事务接口落地。
 
 **Collaboration:** 你主写。你实现失败注入、rollback 和并发保护；我帮你构造测试夹具、解释失败输出和审查 race 风险。
 

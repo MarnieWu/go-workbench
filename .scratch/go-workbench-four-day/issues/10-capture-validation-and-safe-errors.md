@@ -4,7 +4,9 @@
 
 **Blocked by:** 09 — 幂等创建 Capture 的最小 API 切片。
 
-**Status:** ready-for-agent
+**Status:** waiting-for-user
+
+**Agent progress (2026-10-10):** 已完成 HTTP 负向测试、日志脱敏测试、可注入测试 logger、Web 长度提示和失败保留输入。RED 测试当前精确阻塞在用户负责的未知字段、空/超长正文、缺幂等键和 source allowlist 校验。
 
 **Collaboration:** 共同完成。你主写校验边界和错误映射判断；我主写负向 HTTP 测试、日志脱敏测试、Web 错误状态和重复样板。
 

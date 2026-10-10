@@ -44,6 +44,39 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "500":
           $ref: "#/components/responses/InternalError"
+  /v1/tasks/{id}:
+    patch:
+      operationId: updateTask
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+      responses:
+        "200":
+          description: Updated Task with incremented version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
   /v1/captures:
     post:
       operationId: createCapture
@@ -79,7 +112,86 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "500":
           $ref: "#/components/responses/InternalError"
+  /v1/inbox:
+    get:
+      operationId: listInbox
+      responses:
+        "200":
+          description: Owner-scoped pending Candidate list
+          headers:
+            X-Request-ID:
+              $ref: "#/components/headers/RequestId"
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Candidate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /v1/candidates/{id}/reject:
+    post:
+      operationId: rejectCandidate
+      parameters:
+        - $ref: "#/components/parameters/CandidateId"
+      responses:
+        "200":
+          description: Candidate was rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandidateMutationResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /v1/candidates/{id}/accept:
+    post:
+      operationId: acceptCandidate
+      parameters:
+        - $ref: "#/components/parameters/CandidateId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptCandidateRequest"
+      responses:
+        "201":
+          description: Candidate was accepted and a Task was created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AcceptCandidateResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
 components:
+  parameters:
+    CandidateId:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
   headers:
     RequestId:
       description: Request identifier used to correlate API logs
@@ -100,6 +212,18 @@ components:
       headers:
         X-Request-ID:
           $ref: "#/components/headers/RequestId"
+      content:
+        application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: The owner-scoped resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: The resource state changed and the command was not applied
       content:
         application/json:
           schema:
@@ -127,6 +251,9 @@ components:
     CaptureStatus:
       type: string
       enum: [queued, processing, processed, failed]
+    CandidateStatus:
+      type: string
+      enum: [pending_review, accepted, rejected]
     CreateCaptureRequest:
       type: object
       required: [idempotencyKey, inputText, sourceType]
@@ -169,6 +296,85 @@ components:
         createdAt:
           type: string
           format: date-time
+    Candidate:
+      type: object
+      required: [id, captureId, proposedTitle, labels, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        captureId:
+          type: string
+          format: uuid
+        proposedTitle:
+          type: string
+          minLength: 1
+          maxLength: 200
+        proposedDescription:
+          type: [string, "null"]
+          maxLength: 10000
+        proposedProjectId:
+          type: [string, "null"]
+          format: uuid
+        labels:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+        status:
+          $ref: "#/components/schemas/CandidateStatus"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CandidateMutationResult:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: "#/components/schemas/CandidateStatus"
+    AcceptCandidateRequest:
+      type: object
+      additionalProperties: false
+      required: [title, labels]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: [string, "null"]
+          maxLength: 10000
+        projectId:
+          type: [string, "null"]
+          format: uuid
+        labels:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+    AcceptCandidateResult:
+      type: object
+      required: [candidateId, taskId, status]
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        taskId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          const: accepted
     Task:
       type: object
       required: [id, title, status, priority, labels, version, createdAt, updatedAt]
@@ -212,6 +418,39 @@ components:
           format: date-time
         updatedAt:
           type: string
+          format: date-time
+    UpdateTaskRequest:
+      type: object
+      additionalProperties: false
+      required: [version, title, description, status, priority, labels]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+        projectId:
+          type: [string, "null"]
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 10000
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        priority:
+          type: string
+          enum: [none, low, medium, high]
+        labels:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+        dueAt:
+          type: [string, "null"]
           format: date-time
     ErrorResponse:
       type: object

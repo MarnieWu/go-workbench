@@ -2,9 +2,9 @@ TEST_ENV_FILE := deploy/test.env
 GO_CACHE := /tmp/go-workbench-go-cache
 
 .PHONY: help check-test-env-file check-test-database-url check-database-url check-allow-write \
-	test-task test-capture \
+	test-task test-capture test-candidate \
 	test-httpapi test-cmd-api test-cmd-seed test-go-core test-backend \
-	test-postgres-migration test-postgres-schema test-postgres-task test-postgres-capture test-postgres \
+	test-postgres-migration test-postgres-schema test-postgres-task test-postgres-capture test-postgres-candidate test-postgres \
 	test-web test-frontend test-all \
 	test-db-config test-db-up test-db-down test \
 	run-api-test-db run-migrate-test-db run-seed-test-db \
@@ -14,6 +14,7 @@ help:
 	@printf '%s\n' 'Business-block test targets:'
 	@printf '%s\n' '  make test-task                 Run Task domain tests'
 	@printf '%s\n' '  make test-capture              Run Capture domain and HTTP API tests'
+	@printf '%s\n' '  make test-candidate            Run Candidate/Inbox domain and HTTP API tests'
 	@printf '%s\n' '  make test-httpapi              Run HTTP API tests'
 	@printf '%s\n' '  make test-cmd-api              Run API command tests'
 	@printf '%s\n' '  make test-go-core              Run non-database Go package tests'
@@ -27,6 +28,7 @@ help:
 	@printf '%s\n' '  make test-postgres-schema      Run schema tests; requires exported TEST_DATABASE_URL'
 	@printf '%s\n' '  make test-postgres-task        Run Task repository tests; requires exported TEST_DATABASE_URL'
 	@printf '%s\n' '  make test-postgres-capture     Run Capture repository tests; requires exported TEST_DATABASE_URL'
+	@printf '%s\n' '  make test-postgres-candidate   Run Candidate repository tests; requires exported TEST_DATABASE_URL'
 	@printf '%s\n' '  make test-postgres             Run all PostgreSQL package tests; requires exported TEST_DATABASE_URL'
 	@printf '%s\n' ''
 	@printf '%s\n' 'Test/local database targets:'
@@ -129,10 +131,14 @@ test-capture:
 	@GOCACHE=$(GO_CACHE) go test ./internal/capture -count=1
 	@GOCACHE=$(GO_CACHE) go test ./internal/httpapi -run '^TestRouterCreateCapture' -count=1
 
+test-candidate:
+	@GOCACHE=$(GO_CACHE) go test ./internal/candidate -count=1
+	@GOCACHE=$(GO_CACHE) go test ./internal/httpapi -run '^TestRouterListInbox' -count=1
+
 test-httpapi:
 	@GOCACHE=$(GO_CACHE) go test ./internal/httpapi -count=1
 
-test-go-core: test-task test-capture test-httpapi test-cmd-api test-cmd-seed
+test-go-core: test-task test-capture test-candidate test-httpapi test-cmd-api test-cmd-seed
 
 test-postgres-migration: check-test-database-url
 	@GOCACHE=$(GO_CACHE) TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./internal/postgres -run '^TestMigration|^TestRunner' -count=1
@@ -145,6 +151,9 @@ test-postgres-task: check-test-database-url
 
 test-postgres-capture: check-test-database-url
 	@GOCACHE=$(GO_CACHE) TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./internal/postgres -run '^TestCaptureRepositoryCreate' -count=1
+
+test-postgres-candidate: check-test-database-url
+	@GOCACHE=$(GO_CACHE) TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./internal/postgres -run '^TestCandidateRepositoryListPending' -count=1
 
 test-postgres: check-test-database-url
 	@GOCACHE=$(GO_CACHE) TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./internal/postgres -count=1

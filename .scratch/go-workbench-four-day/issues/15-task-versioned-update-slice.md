@@ -4,7 +4,9 @@
 
 **Blocked by:** 08 — 让 Task 列表从 PostgreSQL 读取。
 
-**Status:** ready-for-agent
+**Status:** waiting-for-user
+
+**Agent progress (2026-10-10):** PATCH HTTP/OpenAPI 接线、稳定 `VERSION_CONFLICT`、generated-client Web 编辑和冲突输入保留已完成。owner/ID/version 条件更新由用户实现，运行入口因此尚未注入 updater。
 
 **Collaboration:** 你主写。你实现带 owner、ID、version 条件的更新和冲突测试；我主写 OpenAPI、router 胶水、Web 冲突状态和审查。
 

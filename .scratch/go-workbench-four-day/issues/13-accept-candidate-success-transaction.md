@@ -4,7 +4,9 @@
 
 **Blocked by:** 11 — 展示 pending Candidate 的 Inbox。
 
-**Status:** ready-for-agent
+**Status:** waiting-for-user
+
+**Agent progress (2026-10-10):** accept HTTP/OpenAPI 接线、字段编辑 UI 和 happy-path router 测试已完成。`pgx.Tx`、Task/Evidence/Candidate/Audit 原子写入仍由用户实现，运行入口因此尚未注入 accept service。
 
 **Collaboration:** 你主写。你实现 `pgx.Tx` 成功事务、字段映射和核心测试；我提供 RED 测试框架、HTTP/OpenAPI/UI 接线和代码审查。
 
